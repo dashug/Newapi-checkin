@@ -347,6 +347,12 @@
                 </div>
 
                 <div class="form-group">
+                    <label>CF Clearance（可选）</label>
+                    <input type="text" id="cfclearance-${accountCount}" placeholder="xxsCgaPMM5nd4S2X...">
+                    <small>仅当站点有 Cloudflare 防护时需要填写，从 Cookie 中获取 cf_clearance 的值</small>
+                </div>
+
+                <div class="form-group">
                     <label>备注名称（可选）</label>
                     <input type="text" id="name-${accountCount}" placeholder="主力站 / 备用站">
                     <small>便于识别，不填则显示为"站点X"</small>
@@ -387,6 +393,7 @@
                 const url = document.getElementById(`url-${id}`).value.trim();
                 const session = document.getElementById(`session-${id}`).value.trim();
                 const userId = document.getElementById(`userid-${id}`).value.trim();
+                const cfClearance = document.getElementById(`cfclearance-${id}`).value.trim();
                 const name = document.getElementById(`name-${id}`).value.trim();
 
                 if (!url || !session || !userId) {
@@ -401,6 +408,11 @@
                     user_id: userId,
                     name: name || `站点${id}`
                 };
+
+                // 如果提供了 cf_clearance，添加到配置中
+                if (cfClearance) {
+                    account.cf_clearance = cfClearance;
+                }
 
                 accounts.push(account);
             });
@@ -532,10 +544,11 @@
                 const url = document.getElementById(`url-${id}`).value.trim();
                 const session = document.getElementById(`session-${id}`).value.trim();
                 const userId = document.getElementById(`userid-${id}`).value.trim();
+                const cfClearance = document.getElementById(`cfclearance-${id}`).value.trim();
                 const name = document.getElementById(`name-${id}`).value.trim();
 
-                if (url || session || userId || name) {
-                    accounts.push({ url, session, userId, name });
+                if (url || session || userId || cfClearance || name) {
+                    accounts.push({ url, session, userId, cfClearance, name });
                 }
             });
 
@@ -579,6 +592,7 @@
                     document.getElementById(`url-${id}`).value = account.url || '';
                     document.getElementById(`session-${id}`).value = account.session || '';
                     document.getElementById(`userid-${id}`).value = account.userId || '';
+                    document.getElementById(`cfclearance-${id}`).value = account.cfClearance || '';
                     document.getElementById(`name-${id}`).value = account.name || '';
                 });
 
