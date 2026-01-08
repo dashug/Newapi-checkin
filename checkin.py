@@ -324,7 +324,10 @@ def parse_accounts(accounts_str: str) -> list:
 
 def main():
     """主函数"""
-    execution_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # 设置北京时区
+    import pytz
+    beijing_tz = pytz.timezone('Asia/Shanghai')
+    execution_time = datetime.now(beijing_tz).strftime("%Y-%m-%d %H:%M:%S")
     print('=' * 50)
     print('NewAPI 自动签到')
     print(f'执行时间: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
