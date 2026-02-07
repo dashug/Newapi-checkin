@@ -384,6 +384,7 @@ def main():
         if result['success']:
             success_count += 1
             print(f'  结果: ✅ {result["message"]}')
+            checkin_count = 0
 
             # 显示签到日期
             if result['checkin_date']:
@@ -427,15 +428,14 @@ def main():
         else:
             fail_count += 1
             print(f'  结果: ❌ {result["message"]}')
-
-        # 收集结果用于钉钉通知
-        account_result = {
-            'name': name,
-            'success': False,
-            'message': result['message'],
-            'session_expired': 'session' in result['message'].lower() or '认证' in result['message']
-        }
-        checkin_results.append(account_result)
+            # 收集失败结果用于钉钉通知
+            account_result = {
+                'name': name,
+                'success': False,
+                'message': result['message'],
+                'session_expired': 'session' in result['message'].lower() or '认证' in result['message']
+            }
+            checkin_results.append(account_result)
 
         print()
 
