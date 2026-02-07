@@ -33,6 +33,6 @@ jobs:
       - name: 执行签到
         env:
           NEWAPI_ACCOUNTS: ${{ secrets.NEWAPI_ACCOUNTS }}
-          DINGTALK_WEBHOOK: ${{ secrets.DINGTALK_WEBHOOK }}
-          DINGTALK_SECRET: ${{ secrets.DINGTALK_SECRET }}
+          FEISHU_WEBHOOK: ${{ secrets.FEISHU_WEBHOOK }}
+          FEISHU_SECRET: ${{ secrets.FEISHU_SECRET }}
         run: python checkin.py

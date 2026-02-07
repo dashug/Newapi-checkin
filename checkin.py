@@ -13,9 +13,9 @@ import requests
 from datetime import datetime
 from typing import Optional
 
-# 钉钉通知
+# 飞书通知
 try:
-    from dingtalk_notifier import send_checkin_notification
+    from feishu_notifier import send_checkin_notification
 except ImportError:
     send_checkin_notification = None
 
@@ -444,12 +444,12 @@ def main():
     print(f'签到完成: 成功 {success_count}, 失败 {fail_count}')
     print('=' * 50)
     
-    # 发送钉钉通知
+    # 发送飞书通知
     if send_checkin_notification:
-        print('正在发送钉钉通知...')
+        print('正在发送飞书通知...')
         send_checkin_notification(checkin_results, execution_time)
-    elif os.environ.get('DINGTALK_WEBHOOK'):
-        print('[警告] 已配置 DINGTALK_WEBHOOK 但无法导入通知模块')
+    elif os.environ.get('FEISHU_WEBHOOK'):
+        print('[警告] 已配置 FEISHU_WEBHOOK 但无法导入通知模块')
 
     # 如果全部失败则返回错误码
     if fail_count == len(accounts):
@@ -458,6 +458,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-# === DINGTALK NOTIFICATION PATCH ===
-# This section was added to send DingTalk notifications
