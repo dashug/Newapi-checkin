@@ -53,6 +53,19 @@ class FeishuNotifier:
         data.update(self._build_auth_fields())
         return self._send(data)
 
+    def send_interactive_card(self, card: Dict[str, Any]) -> bool:
+        """发送交互卡片消息"""
+        if requests is None:
+            print('[飞书通知] 错误: 未安装 requests 库')
+            return False
+
+        data: Dict[str, Any] = {
+            'msg_type': 'interactive',
+            'card': card
+        }
+        data.update(self._build_auth_fields())
+        return self._send(data)
+
     def _send(self, data: dict) -> bool:
         try:
             headers = {'Content-Type': 'application/json'}
@@ -76,34 +89,75 @@ def format_quota(quota: int) -> str:
     return str(quota)
 
 
-def build_checkin_report(results: List[Dict[str, Any]], execution_time: str) -> str:
+def _build_summary_title(success_count: int, fail_count: int) -> str:
+    if fail_count == 0:
+        return f'签到完成: 全部成功 ({success_count})'
+    if success_count == 0:
+        return f'签到完成: 全部失败 ({fail_count})'
+    return f'签到完成: 成功 {success_count} / 失败 {fail_count}'
+
+
+def _build_header_template(success_count: int, fail_count: int) -> str:
+    if fail_count == 0:
+        return 'green'
+    if success_count == 0:
+        return 'red'
+    return 'orange'
+
+
+def build_checkin_card(results: List[Dict[str, Any]], execution_time: str) -> Dict[str, Any]:
     success_list = [r for r in results if r.get('success')]
     fail_list = [r for r in results if not r.get('success')]
+    success_count = len(success_list)
+    fail_count = len(fail_list)
 
-    lines = [
-        'NewAPI 签到报告',
-        f'执行时间: {execution_time}',
-        '',
-        f'成功: {len(success_list)} 个',
-    ]
+    card: Dict[str, Any] = {
+        'config': {'wide_screen_mode': True},
+        'header': {
+            'template': _build_header_template(success_count, fail_count),
+            'title': {
+                'tag': 'plain_text',
+                'content': f'NewAPI 签到报告 | {_build_summary_title(success_count, fail_count)}'
+            }
+        },
+        'elements': [
+            {
+                'tag': 'markdown',
+                'content': f'**执行时间**: {execution_time}\n**账号总数**: {len(results)}'
+            },
+            {'tag': 'hr'}
+        ]
+    }
 
-    for r in success_list:
-        name = r.get('name', '未知账号')
-        quota = r.get('quota_awarded', 0)
-        checkin_count = r.get('checkin_count', 0)
-        quota_text = f'+{format_quota(quota)}' if quota else '-'
-        lines.append(f'- {name}: {quota_text}，本月已签 {checkin_count} 天')
+    if success_list:
+        success_lines = [f'✅ **成功 {success_count} 个**']
+        for r in success_list:
+            name = r.get('name', '未知账号')
+            quota = r.get('quota_awarded', 0)
+            checkin_count = r.get('checkin_count', 0)
+            quota_text = f'+{format_quota(quota)}' if quota else '-'
+            success_lines.append(f'- `{name}` | 奖励: `{quota_text}` | 本月: `{checkin_count}` 天')
+        card['elements'].append({'tag': 'markdown', 'content': '\n'.join(success_lines)})
 
-    lines.append('')
-    lines.append(f'失败: {len(fail_list)} 个')
-    for r in fail_list:
-        name = r.get('name', '未知账号')
-        message = r.get('message', '未知错误')
-        lines.append(f'- {name}: {message}')
+    if fail_list:
+        if success_list:
+            card['elements'].append({'tag': 'hr'})
+        fail_lines = [f'❌ **失败 {fail_count} 个**']
+        for r in fail_list:
+            name = r.get('name', '未知账号')
+            message = r.get('message', '未知错误')
+            fail_lines.append(f'- `{name}` | 原因: {message}')
+        card['elements'].append({'tag': 'markdown', 'content': '\n'.join(fail_lines)})
 
-    lines.append('')
-    lines.append(f'汇总: 成功 {len(success_list)}，失败 {len(fail_list)}')
-    return '\n'.join(lines)
+    card['elements'].append({'tag': 'hr'})
+    card['elements'].append({
+        'tag': 'note',
+        'elements': [{
+            'tag': 'plain_text',
+            'content': f'汇总: 成功 {success_count}，失败 {fail_count}'
+        }]
+    })
+    return card
 
 
 def send_checkin_notification(results: List[Dict[str, Any]], execution_time: Optional[str] = None) -> bool:
@@ -117,6 +171,6 @@ def send_checkin_notification(results: List[Dict[str, Any]], execution_time: Opt
     if not execution_time:
         execution_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-    report = build_checkin_report(results, execution_time)
     notifier = FeishuNotifier(webhook_url, secret if secret else None)
-    return notifier.send_text(report)
+    card = build_checkin_card(results, execution_time)
+    return notifier.send_interactive_card(card)
